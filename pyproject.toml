@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "changeproof"
+version = "0.6.0"
+description = "Compare JSON API snapshots and detect potentially breaking changes"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+
+[project.scripts]
+changeproof = "changeproof.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
