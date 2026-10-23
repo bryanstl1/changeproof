@@ -1,0 +1,45 @@
+name: tests
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: changeproof-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .
+      - run: python -m unittest discover -s tests -v
+      - name: Generate example report
+        run: |
+          changeproof compare before.json after.json --html report.html --json report.json || test "$?" -eq 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: changeproof-example-report
+          path: |
+            report.html
+            report.json
+
+  live-https-smoke:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .
+      - name: Public HTTPS capture
+        run: changeproof capture https://jsonplaceholder.typicode.com/todos/1 /tmp/changeproof-live.json
+      - name: Validate captured JSON
+        run: python -c "import json; d=json.load(open('/tmp/changeproof-live.json')); assert d['id']==1"
